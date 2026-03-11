@@ -35,15 +35,31 @@ st.markdown("""
         overflow-x: hidden;
     }
     
-    /* Force internal Streamlit containers to be transparent */
+    /* 2. Force internal Streamlit containers to be transparent */
     [data-testid="stAppViewBlockContainer"],
     [data-testid="stHeader"],
     [data-testid="stBottomBlockContainer"],
+    [data-testid="stBottom"],
+    [data-testid="stBottom"] > div,
     .stChatMessage {
         background-color: transparent !important;
     }
 
-    /* 2. Dropdown animations */
+    /* 3. Brutalize the Chat Input to stay dark */
+    [data-testid="stChatInput"] {
+        background-color: #1a1a1a !important;
+        border: 1px solid #764ade !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        color: #F0F0F0 !important;
+        background-color: #1a1a1a !important;
+    }
+    [data-testid="stChatInput"] button {
+        background-color: transparent !important;
+        color: #764ade !important;
+    }
+
+    /* 4. Dropdown animations */
     details summary {
         transition: color 0.2s ease;
         padding-top: 10px;
@@ -204,4 +220,5 @@ if prompt:
                 st.markdown(response.text, unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
+
                 st.error(f"⚠️ An error occurred: {e}")
