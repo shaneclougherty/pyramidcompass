@@ -3,7 +3,7 @@ import pandas as pd
 import google.generativeai as genai
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="Pyramid Global Sales Compass", page_icon="🧭", layout="centered")
+st.set_page_config(page_title="Pyramid Global Sales Compass", page_icon="PyramidLogoSMALL.png", layout="centered")
 
 # --- SECURE API CONNECTION ---
 try:
@@ -222,3 +222,4 @@ if prompt:
             except Exception as e:
 
                 st.error(f"⚠️ An error occurred: {e}")
+
