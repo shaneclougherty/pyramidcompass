@@ -1,16 +1,20 @@
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
+import os
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Pyramid Global Sales Compass", page_icon="PyramidLogoSMALL.png", layout="centered")
 
 # --- SECURE API CONNECTION ---
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except KeyError:
-    st.error("⚠️ Critical: API Key not found. Please set up your .streamlit/secrets.toml file.")
-    st.stop()
+api_key = os.environ.get("GEMINI_API_KEY")
+
+if not api_key:
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        st.error("⚠️ Critical: API Key not found. Please set up your environment variables.")
+        st.stop()
 
 # --- DATA LOADING ---
 @st.cache_data
@@ -222,4 +226,5 @@ if prompt:
             except Exception as e:
 
                 st.error(f"⚠️ An error occurred: {e}")
+
 
