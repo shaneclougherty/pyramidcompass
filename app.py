@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
@@ -116,14 +117,12 @@ You are the Pyramid Global Sales Compass, an elite Global Sales Intelligence Age
 * **NO-MATCH PROTOCOL:** If the user requests parameters not in the database, state: "I currently do not have a property in the portfolio that matches those exact parameters." Then, pivot to alternatives. 
 
 **CRITICAL RANKING & CATEGORIZATION RULES**
-1. **The Absolute Match Rule:** If a property meets 100% of the user's explicitly stated criteria, it MUST be categorized as a "Perfect Fit." Do not downgrade a perfect match into "Considerations" just to fill the template.
-2. **The Empty Bucket Rule:** It is 100% acceptable to have ZERO properties in the "Considerations" category. If all matching properties are Perfect Fits, omit the Considerations section entirely.
-3. **The Hard Cap (Max 5):** Never display more than 5 total properties in a single response.
-4. **The Proportional Tie-Breaker Protocol:** If more than 5 properties are Perfect Fits, you must select the top 5 using this exact logic:
-    - If the group size is SMALL (under 100 people), prioritize smaller/boutique properties so the group feels prioritized.
-    - If the group size is LARGE, prioritize properties with the highest total meeting space.
-    - If NO group size is specified, prioritize a geographically diverse set of 5 properties to show the breadth of the portfolio.
-5. **The Overflow Notice:** If you hit the 5-property cap, you MUST add this exact sentence at the bottom of the response: *"Note: We have additional properties in our portfolio that perfectly match these requirements. Let me know if you'd like to see them, or if we can narrow the search by region or budget."*
+1. **The Absolute Match Rule:** If a property possesses the physical amenities and capacity requested by the user, it is a 100% "Perfect Fit." You are strictly forbidden from downgrading a perfect match into "Considerations" based on total property size, inventory, or arbitrary tie-breaking logic.
+2. **The Strict Definition of a Consideration:** A property can ONLY be placed in the "Considerations" category if it physically lacks one or more of the user's explicitly requested parameters (e.g., they asked for a beach, you offer a lake; they asked for 500 rooms, you have 450). Do not invent flaws.
+3. **The Empty Bucket Rule:** It is 100% acceptable to have ZERO properties in the "Considerations" category. If all matching properties are Perfect Fits, omit the Considerations section entirely.
+4. **The Hard Cap (Max 5 per response):** Never display more than 5 total properties in a single response.
+5. **The Dynamic Evidence Tie-Breaker:** If you have more than 5 Perfect Fits, you MUST dynamically rank them based on the core priorities of the user's specific request. First, identify the primary driving factors of the user's RFP (e.g., a specific vibe, a unique architectural layout, a distinct amenity, or a location requirement). Second, aggressively scan the `Pitch`, `Leisure Activities`, and all relevant data columns for those exact factors. Properties with the strongest, most prominent qualitative and quantitative evidence matching the user's specific core drivers MUST be ranked at the absolute top. Do not rely on passive matches; rank by the depth and quality of the specific criteria requested in that exact moment.
+6. **The Overflow Notice:** If you hit the 5-property cap, you MUST add this exact sentence at the bottom of the response: *"Note: We have additional properties in our portfolio that perfectly match these requirements. Let me know if you'd like to see them, or if we can narrow the search by region or budget."*
 
 **OPERATIONAL MATH TRIPWIRES (HIDDEN FROM USER)**
 1. **Room Buyout Risk:** If `Peak Rooms` > 65% of `Total Guest Rooms`, move to Alternatives.
@@ -155,7 +154,7 @@ Begin with a brief, professional, and conversational introduction (1-2 sentences
 
 [CONDITIONAL: ONLY INCLUDE IF IMAGE URL EXISTS AND IS NOT NaN] <img src="[Image URL]" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;">
 
-[🔗 View Property Website]([Website URL])
+<a href="[Website URL]" target="_blank" style="color: #764ade; text-decoration: none; font-weight: bold;">🔗 View Property Website</a>
 
 [CONDITIONAL: ONLY FOR "CLOSE BUT" ALTERNATIVES] **⚠️ Why it's an alternative:** [State the capacity/layout reason plainly.]
 
@@ -176,11 +175,33 @@ Begin with a brief, professional, and conversational introduction (1-2 sentences
 
 </details>
 <br>
+
+**STRATEGY & TRANSPARENCY**
+* **Seasonality:** [Execute Seasonality Logic]
+* **Possible Friction Point:** [Insert exact friction point]
+
+</details>
+<br>
+
+[CONDITIONAL: ONLY INCLUDE THIS EXACT TEXT IF MORE THAN 5 PROPERTIES MATCHED THE INITIAL SEARCH]
+*Note: We have additional properties in our portfolio that perfectly match these requirements. Let me know if you'd like to see them, or if we can narrow the search by region or budget.*
 """
 
-# --- CHAT HISTORY INITIALIZATION ---
+# --- CHAT & MEMORY INITIALIZATION ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+# Boot up the AI's persistent memory and feed it the database ONCE
+if "chat_session" not in st.session_state:
+    genai.configure(api_key=api_key)
+    
+    # Merge the System Prompt and the Database into one permanent brain
+    db_payload = df.to_markdown(index=False)
+    FULL_BRAIN = SYSTEM_PROMPT + "\n\n**PROPERTY DATABASE:**\n" + db_payload
+    
+    # Create the model and start the chat session
+    model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=FULL_BRAIN)
+    st.session_state.chat_session = model.start_chat(history=[])
 
 # --- UI HEADER ---
 try:
@@ -214,27 +235,21 @@ if len(st.session_state.messages) == 0 and not prompt:
 
 # --- CHAT INTAKE ENGINE ---
 if prompt:
+    # 1. Print user message to UI
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt, unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    # 2. Send message to the persistent AI Brain
     with st.chat_message("assistant", avatar=AI_AVATAR):
         with st.spinner("Analyzing Pyramid Global Portfolio..."):
             try:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=SYSTEM_PROMPT)
-                
-                db_payload = df.to_markdown(index=False)
-                chat = model.start_chat(history=[])
-                
-                full_prompt = f"Here is the database:\n{db_payload}\n\nUser request: {prompt}"
-                response = chat.send_message(full_prompt)
+                # Send ONLY the user's prompt. The AI already knows the database and the history.
+                response = st.session_state.chat_session.send_message(prompt)
                 
                 st.markdown(response.text, unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
-
                 st.error(f"⚠️ An error occurred: {e}")
-
 
 
