@@ -7,20 +7,6 @@ import os
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Pyramid Global Sales Compass", page_icon="PyramidLogoSMALL.png", layout="centered")
 
-# --- BRANDING LOGO (THE FIX) ---
-# We use a try/except block so the app doesn't crash if the image is missing
-try:
-    st.logo("PyramidLogoSMALL.png", icon_image="PyramidLogoSMALL.png")
-except:
-    pass
-
-# --- MOBILE PWA OPTIMIZATION ---
-st.markdown("""
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="PyramidLogoSMALL.png">
-""", unsafe_allow_html=True)
-
 # --- SECURE API CONNECTION ---
 api_key = os.environ.get("GEMINI_API_KEY")
 
@@ -265,6 +251,7 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
                 st.error(f"⚠️ An error occurred: {e}")
+
 
 
 
