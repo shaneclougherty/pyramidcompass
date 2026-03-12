@@ -7,8 +7,12 @@ import os
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Pyramid Global Sales Compass", page_icon="PyramidLogoSMALL.png", layout="centered")
 
-# --- BRANDING LOGO ---
-st.logo("PyramidLogoSMALL.png", icon_image="PyramidLogoSMALL.png")
+# --- BRANDING LOGO (THE FIX) ---
+# We use a try/except block so the app doesn't crash if the image is missing
+try:
+    st.logo("PyramidLogoSMALL.png", icon_image="PyramidLogoSMALL.png")
+except:
+    pass
 
 # --- MOBILE PWA OPTIMIZATION ---
 st.markdown("""
@@ -261,6 +265,7 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
                 st.error(f"⚠️ An error occurred: {e}")
+
 
 
 
